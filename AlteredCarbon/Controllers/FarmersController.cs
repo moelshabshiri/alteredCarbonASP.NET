@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
 using MongoDB.Driver;
+using System.Threading.Tasks;
 
 namespace AlteredCarbon.Controllers
 {
@@ -23,9 +24,11 @@ namespace AlteredCarbon.Controllers
 
 
         [HttpPost("login")]
-        public IActionResult LogIn([FromBody] Farmer farmer)
+        public async Task<IActionResult> LogIn([FromBody] Farmer farmer)
         {
-            var farmerObj = _farmers.Find(f => f.email == farmer.email && f.password == farmer.password).FirstOrDefault();
+            Console.WriteLine("HELL");
+            var farmerObj =  await _farmers.Find(f => f.email == farmer.email && f.password == farmer.password).FirstOrDefaultAsync();
+            Console.WriteLine(farmerObj.email);
             if (farmerObj == null)
             {
 
@@ -40,10 +43,10 @@ namespace AlteredCarbon.Controllers
 
 
         [HttpPost("signup")]
-        public IActionResult SignUp([FromBody] Farmer farmer)
+        public async Task<IActionResult> SignUp([FromBody] Farmer farmer)
         {
-            var farmerObjE = _farmers.Find(f => f.email == farmer.email).FirstOrDefault();
-            var farmerObjPN = _farmers.Find(f => f.email == farmer.email).FirstOrDefault();
+            var farmerObjE = await _farmers.Find(f => f.email == farmer.email).FirstOrDefaultAsync();
+            var farmerObjPN = await _farmers.Find(f => f.email == farmer.email).FirstOrDefaultAsync();
             if (farmerObjE == null && farmerObjPN == null)
             {
                 if (farmer.name == null)
@@ -68,7 +71,7 @@ namespace AlteredCarbon.Controllers
 
                 farmer.accountType = "farmer";
                 farmer.points = 500;
-                _farmers.InsertOne(farmer);
+                await _farmers.InsertOneAsync(farmer);
                 return Ok(new { user = farmer });
             }
             else
@@ -81,10 +84,10 @@ namespace AlteredCarbon.Controllers
 
 
         [HttpPost("createorder/{email}")]
-        public IActionResult CreateOrder([FromRoute] string email, [FromBody] KitOrder kitOrder)
+        public async Task<IActionResult> CreateOrder([FromRoute] string email, [FromBody] KitOrder kitOrder)
         {
 
-            var farmerObj = _farmers.Find(f => f.email == email).FirstOrDefault();
+            var farmerObj = await _farmers.Find(f => f.email == email).FirstOrDefaultAsync();
             if (farmerObj == null)
             {
                 return NotFound(new { message = "Creating order failed, user does not exist" });
@@ -95,9 +98,9 @@ namespace AlteredCarbon.Controllers
 
                 kitOrder.farmer = farmerObj.id;
 
-                _kitOrders.InsertOne(kitOrder);
+               await _kitOrders.InsertOneAsync(kitOrder);
                 farmerObj.kitOrders.Add(kitOrder.id);
-                _farmers.FindOneAndReplace(f => f.email == email, farmerObj);
+                await _farmers.FindOneAndReplaceAsync(f => f.email == email, farmerObj);
 
                 return Ok(new { createdOrder = kitOrder });
             }
@@ -106,9 +109,9 @@ namespace AlteredCarbon.Controllers
 
 
         [HttpPost("sellagrwaste/{email}")]
-        public IActionResult SellAgrWaste([FromRoute] string email, [FromBody] SellAgrWasteOrder order)
+        public async Task<IActionResult> SellAgrWaste([FromRoute] string email, [FromBody] SellAgrWasteOrder order)
         {
-            var farmerObj = _farmers.Find(f => f.email == email).FirstOrDefault();
+            var farmerObj = await _farmers.Find(f => f.email == email).FirstOrDefaultAsync();
             if (farmerObj == null)
             {
                 return NotFound(new { message = "Creating order failed, user does not exist" });
@@ -117,9 +120,9 @@ namespace AlteredCarbon.Controllers
             {
                 order.datetimeOfOrder = DateTime.Now;
                 order.farmer = farmerObj.id;
-                _sellOrders.InsertOne(order);
+               await _sellOrders.InsertOneAsync(order);
                 farmerObj.sellAgrWasteOrders.Add(order.id);
-                _farmers.FindOneAndReplace(f => f.email == email, farmerObj);
+               await _farmers.FindOneAndReplaceAsync(f => f.email == email, farmerObj);
                 return Ok(new { createdOrder = order });
             }
 
@@ -127,34 +130,34 @@ namespace AlteredCarbon.Controllers
 
 
         [HttpGet("kitorders/{email}")]
-        public IActionResult GetKitOrders([FromRoute] string email)
+        public async Task<IActionResult> GetKitOrders([FromRoute] string email)
         {
 
-            var farmerObj = _farmers.Find(f => f.email == email).FirstOrDefault();
+            var farmerObj = await _farmers.Find(f => f.email == email).FirstOrDefaultAsync();
             if (farmerObj == null)
             {
                 return NotFound(new { message = "Getting orders failed, user does not exist" });
             }
             else
             {
-                var kitOrders = _kitOrders.Find(k => k.farmer == farmerObj.id).ToList();
+                var kitOrders = await _kitOrders.Find(k => k.farmer == farmerObj.id).ToListAsync();
                 return Ok(new { kitOrders = kitOrders });
             }
 
         }
 
         [HttpGet("sellagrwasteorders/{email}")]
-        public IActionResult GetSellAgrWasteOrders([FromRoute] string email)
+        public async Task<IActionResult> GetSellAgrWasteOrders([FromRoute] string email)
         {
 
-            var farmerObj = _farmers.Find(f => f.email == email).FirstOrDefault();
+            var farmerObj = await _farmers.Find(f => f.email == email).FirstOrDefaultAsync();
             if (farmerObj == null)
             {
                 return NotFound(new { message = "Getting orders failed, user does not exist" });
             }
             else
             {
-                var sellAgrWasteOrders = _sellOrders.Find(k => k.farmer == farmerObj.id).ToList();
+                var sellAgrWasteOrders = await _sellOrders.Find(k => k.farmer == farmerObj.id).ToListAsync();
                 return Ok(new { orders = sellAgrWasteOrders });
             }
 
@@ -162,10 +165,10 @@ namespace AlteredCarbon.Controllers
 
 
         [HttpGet("points/{email}")]
-        public IActionResult GetNumberOfPoints([FromRoute] string email)
+        public async Task<IActionResult> GetNumberOfPoints([FromRoute] string email)
         {
 
-            var farmerObj = _farmers.Find(f => f.email == email).FirstOrDefault();
+            var farmerObj = await _farmers.Find(f => f.email == email).FirstOrDefaultAsync();
             if (farmerObj == null)
             {
                 return NotFound(new { message = "Creating order failed, user does not exist" });

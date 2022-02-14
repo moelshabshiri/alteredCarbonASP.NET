@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
 using MongoDB.Driver;
+using System.Threading.Tasks;
 
 namespace AlteredCarbon.Controllers
 {
@@ -25,9 +26,9 @@ namespace AlteredCarbon.Controllers
 
 
         [HttpPost("login")]
-        public IActionResult LogIn([FromBody] Cooperative cooperative)
+        public async Task<IActionResult> LogIn([FromBody] Cooperative cooperative)
         {
-            var userObj = _cooperatives.Find(c => c.email == cooperative.email && c.password == cooperative.password).FirstOrDefault();
+            var userObj = await _cooperatives.Find(c => c.email == cooperative.email && c.password == cooperative.password).FirstOrDefaultAsync();
             if (userObj == null)
             {
                 return NotFound(new { message = "Invalid credentials, could not log you in" });
@@ -42,23 +43,23 @@ namespace AlteredCarbon.Controllers
 
 
         [HttpPut("acceptkitorder/{email}")]
-        public IActionResult AcceptKitOrder([FromRoute] string email, [FromBody] KitOrder Order)
+        public async Task<IActionResult> AcceptKitOrder([FromRoute] string email, [FromBody] KitOrder Order)
         {
 
             string orderId = Order.id;
-            var userObj = _cooperatives.Find(c => c.email == email).FirstOrDefault();
+            var userObj = await _cooperatives.Find(c => c.email == email).FirstOrDefaultAsync();
             if (userObj == null)
             {
                 return NotFound(new { message = "Accepting order failed, user does not exist" });
             }
 
-            var kitOrder = _kitOrders.Find(i => i.id == orderId).FirstOrDefault();
+            var kitOrder = await _kitOrders.Find(i => i.id == orderId).FirstOrDefaultAsync();
             if (kitOrder == null)
             {
                 return NotFound(new { message = "Accepting order failed, order does not exist" });
             }
 
-            var existingFarmerUser = _farmers.Find(i => i.id == kitOrder.farmer).FirstOrDefault();
+            var existingFarmerUser =await _farmers.Find(i => i.id == kitOrder.farmer).FirstOrDefaultAsync();
             if (existingFarmerUser == null)
             {
                 return NotFound(new { message = "Accepting order failed, user does not exist" });
@@ -70,8 +71,8 @@ namespace AlteredCarbon.Controllers
                 kitOrder.approvedBy = userObj.id;
                 existingFarmerUser.points -= kitOrder.orderPoints;
 
-                _kitOrders.FindOneAndReplace(i => i.id == orderId, kitOrder);
-                _farmers.FindOneAndReplace(i => i.email == email, existingFarmerUser);
+                await _kitOrders.FindOneAndReplaceAsync(i => i.id == orderId, kitOrder);
+                await _farmers.FindOneAndReplaceAsync(i => i.email == email, existingFarmerUser);
 
                 return Ok(new { kitOrder = kitOrder });
         }
@@ -83,22 +84,22 @@ namespace AlteredCarbon.Controllers
 
 
         [HttpPut("acceptsaworder/{email}")]
-        public IActionResult AcceptSellAgrWasteOrder([FromRoute] string email, [FromBody] SellAgrWasteOrder Order)
+        public async Task<IActionResult> AcceptSellAgrWasteOrder([FromRoute] string email, [FromBody] SellAgrWasteOrder Order)
         {
             string orderId = Order.id;
-            var userObj = _cooperatives.Find(c => c.email == email).FirstOrDefault();
+            var userObj = await _cooperatives.Find(c => c.email == email).FirstOrDefaultAsync();
             if (userObj == null)
             {
                 return NotFound(new { message = "Accepting order failed, user does not exist" });
             }
 
-            var order = _sellOrders.Find(i => i.id == orderId).FirstOrDefault();
+            var order = await _sellOrders.Find(i => i.id == orderId).FirstOrDefaultAsync();
             if (order == null)
             {
                 return NotFound(new { message = "Accepting order failed, order does not exist" });
             }
 
-            var existingFarmerUser = _farmers.Find(i => i.id == order.farmer).FirstOrDefault();
+            var existingFarmerUser = await _farmers.Find(i => i.id == order.farmer).FirstOrDefaultAsync();
             if (existingFarmerUser == null)
             {
                 return NotFound(new { message = "Accepting order failed, user does not exist" });
@@ -109,8 +110,8 @@ namespace AlteredCarbon.Controllers
             order.approvedBy = userObj.id;
             existingFarmerUser.points -= order.orderPoints;
 
-            _sellOrders.FindOneAndReplace(i => i.id == orderId, order);
-            _farmers.FindOneAndReplace(i => i.email == email, existingFarmerUser);
+            await _sellOrders.FindOneAndReplaceAsync(i => i.id == orderId, order);
+            await _farmers.FindOneAndReplaceAsync(i => i.email == email, existingFarmerUser);
 
             return Ok(new { order = order });
         }
@@ -121,16 +122,16 @@ namespace AlteredCarbon.Controllers
 
 
         [HttpGet("kitorders/{email}")]
-        public IActionResult GetPendingKitOrders([FromRoute] string email)
+        public async Task<IActionResult> GetPendingKitOrders([FromRoute] string email)
         {
 
-            var userObj = _cooperatives.Find(c => c.email == email).FirstOrDefault();
+            var userObj = await _cooperatives.Find(c => c.email == email).FirstOrDefaultAsync();
             if (userObj == null)
             {
                 return NotFound(new { message = "Creating order failed, user does not exist" });
             }
 
-            var kitOrders = _kitOrders.Find(o=>o.status=="pending").ToList();
+            var kitOrders = await _kitOrders.Find(o=>o.status=="pending").ToListAsync();
 
             return Ok(new { kitOrders = kitOrders });
 
@@ -138,16 +139,16 @@ namespace AlteredCarbon.Controllers
 
 
         [HttpGet("sellagrwasteorders/{email}")]
-        public IActionResult GetSellAgrWasteOrders([FromRoute] string email)
+        public async Task<IActionResult> GetSellAgrWasteOrders([FromRoute] string email)
         {
 
-            var userObj = _cooperatives.Find(c => c.email == email).FirstOrDefault();
+            var userObj = await _cooperatives.Find(c => c.email == email).FirstOrDefaultAsync();
             if (userObj == null)
             {
                 return NotFound(new { message = "Creating order failed, user does not exist" });
             }
 
-            var orders = _sellOrders.Find(o => o.status == "pending").ToList();
+            var orders = await _sellOrders.Find(o => o.status == "pending").ToListAsync();
 
             return Ok(new { orders = orders });
 

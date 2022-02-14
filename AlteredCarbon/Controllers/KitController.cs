@@ -3,6 +3,7 @@ using AlteredCarbon.Database;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 using MongoDB.Driver;
+using System.Threading.Tasks;
 
 namespace AlteredCarbon.Controllers
 {
@@ -19,10 +20,10 @@ namespace AlteredCarbon.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetKitValues()
+        public async Task<IActionResult> GetKitValues()
         {
-            var kitvalues = _kitvalues.Find(order=>true).FirstOrDefault();
-            return Ok(new { kit = _kitvalues.Find(order => true).FirstOrDefault() });
+            var kitvalues = await _kitvalues.Find(order=>true).FirstOrDefaultAsync();
+            return Ok(new { kit = await _kitvalues.Find(order => true).FirstOrDefaultAsync() });
         }
 
 
